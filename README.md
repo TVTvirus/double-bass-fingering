@@ -8,8 +8,7 @@
 
 ---
 
-<!-- Replace the line below with your actual screenshot once you have one -->
-<!-- ![preview](assets/preview.png) -->
+![preview](assets/preview.png) 
 
 ## ✨ What it does
 
