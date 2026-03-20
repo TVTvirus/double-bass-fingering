@@ -3,14 +3,14 @@
 //  Context-aware fingering using dynamic programming
 //  Compatible with MuseScore 3.x and 4.x
 //
-//  Author: Varuk / Zahid
+//  Author: TVTvirus
 //  License: GPL-3.0
 //=============================================================================
 import QtQuick 2.2
 import MuseScore 3.0
 
 MuseScore {
-    version: "4.0"
+    version: "1.0"
     description: "Double Bass fingering with Simandl positions, context-aware"
     menuPath: "Plugins.Fingering.DoubleBassSimandl"
     id: doubleBassSimandl
