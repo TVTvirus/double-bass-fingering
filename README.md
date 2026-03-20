@@ -25,8 +25,8 @@
 | Color | Position |
 |-------|----------|
 | ⚫ Black | Open string |
-| 🔵 Blue | 1st position |
 | 🩵 Cyan | Half position |
+| 🔵 Blue | 1st position |
 | 🟢 Green | 2nd position |
 | 🟡 Yellow | 3rd position |
 | 🟠 Orange | 4th position |
