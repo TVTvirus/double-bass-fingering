@@ -5,6 +5,11 @@
 ![MuseScore](https://img.shields.io/badge/MuseScore-4.4%2B-0071bb?style=flat-square&logo=musescore&logoColor=white)
 ![License](https://img.shields.io/badge/license-GPL--3.0-green?style=flat-square)
 ![System](https://img.shields.io/badge/system-Simandl%20%2F%20Italian-orange?style=flat-square)
+[![Download](https://img.shields.io/github/v/release/TVTvirus/double-bass-fingering?style=flat-square&label=download&color=success)](https://github.com/TVTvirus/double-bass-fingering/releases/latest/download/DoubleBassSimandl.qml)
+
+### ⬇️ [Download the plugin (DoubleBassSimandl.qml)](https://github.com/TVTvirus/double-bass-fingering/releases/latest/download/DoubleBassSimandl.qml)
+
+One file. Put it in your MuseScore plugins folder, restart MuseScore, enable it under `Home > Plugins`. Full steps under [Installation](#-installation).
 
 ---
 
@@ -73,7 +78,7 @@ Intermediate positions (2½, 3½, 5½, 6½) get a lighter shade of the position 
 
 ## 📥 Installation
 
-1. Download `DoubleBassSimandl.qml`
+1. Download [`DoubleBassSimandl.qml`](https://github.com/TVTvirus/double-bass-fingering/releases/latest/download/DoubleBassSimandl.qml) (or the `.zip` from the [latest release](https://github.com/TVTvirus/double-bass-fingering/releases/latest), same file plus this README)
 2. Copy it to your MuseScore plugins folder:
 
 | OS | Path |
