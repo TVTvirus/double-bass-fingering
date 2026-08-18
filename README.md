@@ -129,7 +129,14 @@ node tools/test-core.js     # 13 passages, with the expected reading of each
 node tools/compare-old.js   # this version vs the previous one, side by side
 python3 tools/qml-check.py DoubleBassSimandl.qml   # catches QML errors that stop
                                                    # the plugin from loading at all
+node tools/simulate-plugin.js   # runs the whole plugin against a stubbed
+                                # MuseScore API: ties, rests, double stops,
+                                # out-of-range notes, re-running over itself
 ```
+
+The last two matter because a broken plugin is indistinguishable from one that
+does nothing: MuseScore reports the error only in its log
+(`~/.local/share/MuseScore/MuseScore4/logs/`), never on screen.
 
 You can also run the engine over a whole MusicXML file and look at the result as
 a score, again without opening MuseScore:
