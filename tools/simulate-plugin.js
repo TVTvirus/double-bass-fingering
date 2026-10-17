@@ -183,12 +183,12 @@ for (const [lang, naming] of [['en', 'auto'], ['es', 'auto'], ['en', 'solfege']]
     }
 }
 
-// re-running must replace its own labels, not stack them
-{
-    language = 'en'; stringNaming = 'auto';
+// Re-running must replace labels in both naming systems.
+for (const lang of ['en', 'es']) {
+    language = lang; stringNaming = 'auto';
     const cfg = Object.assign({}, settings);
     cfg.division = division;
-    cfg.stringNames = cfg.stringLetters;
+    cfg.stringNames = language === 'es' ? cfg.stringSolfege : cfg.stringLetters;
     const score = buildScore(CASES['escala de negras']);
     const cursor = makeCursor(score);
     let counts = [];

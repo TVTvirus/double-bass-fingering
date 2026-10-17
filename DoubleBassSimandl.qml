@@ -6,14 +6,14 @@
 //  fingering (see COST MODEL below), not just "prefer low positions".
 //
 //  Author: TVTvirus
-//  Version: 2.0
+//  Version: 2.1
 //  License: GPL-3.0
 //=============================================================================
 import QtQuick 2.2
 import MuseScore 3.0
 
 MuseScore {
-    version: "2.0"
+    version: "2.1"
     description: "Double Bass fingering with Simandl positions, context-aware"
 
     // MuseScore 4.4+ manifest. On MuseScore 3.x and 4.0-4.3, replace these
@@ -28,6 +28,8 @@ MuseScore {
     //  CONFIGURATION
     //=========================================================================
     property var settings: ({
+        // study: economical movement; arco: lyrical; pizzicato: open strings welcome.
+        playingStyle: "study",
         // --- instrument ---------------------------------------------------
         openStrings: [28, 33, 38, 43],      // E1 A1 D2 G2 (sounding MIDI)
         stringNames: ["E", "A", "D", "G"],  // filled in from stringNaming below
@@ -51,7 +53,7 @@ MuseScore {
         // instrument. Intermediate positions are playable but less idiomatic.
         // Above the heel (anchor 8+) the hand has to rotate around the neck.
         //            a=0   ½    1ª   2ª   2½   3ª   3½   4ª   5ª   5½   6ª   6½   7ª
-        neckEase:   [ 0.0, 2.2, 0.0, 0.4, 2.6, 0.8, 3.0, 1.2, 2.6, 4.6, 3.4, 5.6, 5.5 ],
+        neckEase:   [ 0.0, 0.3, 0.0, 0.2, 0.6, 0.4, 0.8, 0.6, 1.3, 2.3, 1.7, 2.8, 2.8 ],
         thumbEase:  6.0,        // cost of the first thumb position
         thumbSlope: 0.35,       // extra cost per semitone above thumbMinFret
         wThumbClosed: 1.2,      // chromatic thumb shape (T-1-2-3 all semitones)
@@ -290,11 +292,15 @@ MuseScore {
                     var hi = stopsIn(ps[1], FRAMES[i])
                     for (j = 0; j < lo.length; j++)
                         for (k = 0; k < hi.length; k++)
-                            if (lo[j].s < hi[k].s)
+                            if (hi[k].s === lo[j].s + 1 ||
+                                (cfg.playingStyle === "pizzicato" && lo[j].s < hi[k].s))
                                 out.push(makeOption([lo[j], hi[k]], FRAMES[i], true))
                 }
-                if (out.length > 0) return out
+                return out
             }
+
+            // Do not silently label only one note of an unsupported chord.
+            if (ps.length > 2) return out
 
             // single note (or fallback: the top note of a bigger chord)
             var p = ps[ps.length - 1]
@@ -312,6 +318,10 @@ MuseScore {
         // was or travels to where it is needed next. Same for a note that is out
         // of the instrument's range.
         function freeHandOptions(ev, anchors, hasStopped) {
+            if (ev.pitches.length > 1) {
+                if (hasStopped) return []
+                return [makeOption([{s: 0, f: ""}], anchors[0], false)]
+            }
             var p = ev.pitches[ev.pitches.length - 1]
             var openStr = -1
             for (var s = 0; s < OPEN.length; s++) if (p === OPEN[s]) openStr = s
@@ -371,7 +381,9 @@ MuseScore {
             var delta = Math.max(1, cur.tick - prev.tick)
             var gap   = cur.tick - (prev.tick + prev.ticks)
 
-            var u = DIV / delta
+            // Cursor tempo is quarter notes per second; reference tempo = 120 BPM.
+            var tempo = prev.tempo > 0 ? prev.tempo : 2
+            var u = (DIV / delta) * tempo / 2
             if (gap >= DIV * 4)     u *= cfg.longRestRelief
             else if (gap >= DIV)    u *= cfg.restRelief
             if (u < cfg.urgencyMin) u = cfg.urgencyMin
@@ -382,17 +394,20 @@ MuseScore {
             return {
                 urg:      u,
                 interval: Math.abs(pCur - pPrev),
-                onBeat:   (cur.tick % DIV) === 0
+                onBeat:   (cur.tick % DIV) === 0,
+                reset:    gap >= DIV
             }
         }
 
         function noteCost(o, ev) {
             if (o.dead) return 0
-            var quarters = Math.min(4.0, ev.ticks / DIV)
+            var tempo = ev.tempo > 0 ? ev.tempo : 2
+            var quarters = Math.min(4.0, ev.ticks / DIV * 2 / tempo)
             var lyric    = Math.max(0, quarters - 0.5)
-            var c = o.ease
-            if (o.openOnly)          c += cfg.wOpenLyric   * lyric   // R6
-            if (o.topFing === "4")   c += cfg.wFinger4Long * lyric   // R12
+            var lyrical = cfg.playingStyle === "arco" || !cfg.playingStyle
+            var c = o.handFree ? 0 : o.ease
+            if (o.openOnly && lyrical) c += cfg.wOpenLyric * lyric
+            if (o.topFing === "4" && lyrical) c += cfg.wFinger4Long * lyric
             return c
         }
 
@@ -421,11 +436,13 @@ MuseScore {
             // R4 (fixed timbre cost) + R3 (bow cost scales) + R10
             if (sd > 0) {
                 var f = cfg.crossFactor[Math.min(sd, cfg.crossFactor.length - 1)]
-                c += (cfg.wCrossTone + cfg.wCrossBow * ctx.urg) * f
+                var crossWeight = (cfg.playingStyle === "study" ||
+                                   cfg.playingStyle === "pizzicato") ? 0.45 : 1.0
+                c += (cfg.wCrossTone + cfg.wCrossBow * ctx.urg) * f * crossWeight
 
                 // R2: a half step across strings sounds wrong, doubly so when
                 // one of the two notes is open
-                if (ctx.interval > 0 && ctx.interval <= 1) {
+                if (!ctx.reset && ctx.interval > 0 && ctx.interval <= 1) {
                     c += cfg.wHalfStepCross
                     if (a.openOnly || b.openOnly) c += cfg.wHalfStepCrossOpen
                 }
@@ -438,7 +455,8 @@ MuseScore {
             }
 
             // R6b
-            if (a.openOnly && b.openOnly) c += cfg.wOpenRun
+            if (!ctx.reset && a.openOnly && b.openOnly &&
+                (cfg.playingStyle === "arco" || !cfg.playingStyle)) c += cfg.wOpenRun
 
             if (a.thumb !== b.thumb) c += cfg.wThumbSwitch * ctx.urg
 
@@ -496,7 +514,7 @@ MuseScore {
     // Anything this plugin wrote before, so a second run replaces it instead of
     // stacking labels on top of each other.
     function isOurLabel(s) {
-        return /^[EADG](0|1|2|3|4|T)(\s*\([^)]*\))?(\/[EADG](0|1|2|3|4|T))?$/.test(s)
+        return /^(?:\?|(?:[EADG]|Mi|La|Re|Sol)[01234T](?:\s*\([^)]*\))?(?:\/(?:[EADG]|Mi|La|Re|Sol)[01234T])?(?:\s*\([^)]*\))?)$/.test(s)
     }
 
     function clearPrevious(cursor, track, endTick, fullScore) {
@@ -528,13 +546,14 @@ MuseScore {
                     // continuation of a tie: it is the same stopped note, so it
                     // just makes the previous event longer
                     if (events.length > 0)
-                        events[events.length - 1].ticks += ch.duration.ticks
+                        events[events.length - 1].ticks += (ch.actualDuration || ch.duration).ticks
                 } else {
                     live.sort(function (a, b) { return a - b })
                     events.push({
                         pitches: live,
                         tick:    cursor.tick,
-                        ticks:   ch.duration.ticks
+                        ticks:   (ch.actualDuration || ch.duration).ticks,
+                        tempo:   cursor.tempo > 0 ? cursor.tempo : 2
                     })
                 }
             }
@@ -570,7 +589,7 @@ MuseScore {
                 // note colour carry the string.
                 var fast    = cursor.element.duration.ticks < division / 2
                 var shifted = !opt.handFree && opt.posName !== prevPos
-                var moved   = shifted || (!fast && opt.mainStr !== prevStr)
+                var moved   = shifted || opt.mainStr !== prevStr
 
                 // When the notes are long enough to carry a label, every change
                 // of finger is worth printing: that is what the player reads.

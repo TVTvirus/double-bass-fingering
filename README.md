@@ -5,9 +5,9 @@
 ![MuseScore](https://img.shields.io/badge/MuseScore-4.4%2B-0071bb?style=flat-square&logo=musescore&logoColor=white)
 ![License](https://img.shields.io/badge/license-GPL--3.0-green?style=flat-square)
 ![System](https://img.shields.io/badge/system-Simandl%20%2F%20Italian-orange?style=flat-square)
-[![Download](https://img.shields.io/github/v/release/TVTvirus/double-bass-fingering?style=flat-square&label=download&color=success)](https://github.com/TVTvirus/double-bass-fingering/releases/latest/download/DoubleBassSimandl.qml)
+[![Download](https://img.shields.io/github/v/release/TVTvirus/double-bass-fingering?style=flat-square&label=download&color=success)](https://raw.githubusercontent.com/TVTvirus/double-bass-fingering/main/DoubleBassSimandl.qml)
 
-### ⬇️ [Download the plugin (DoubleBassSimandl.qml)](https://github.com/TVTvirus/double-bass-fingering/releases/latest/download/DoubleBassSimandl.qml)
+### ⬇️ [Download the plugin (DoubleBassSimandl.qml)](https://raw.githubusercontent.com/TVTvirus/double-bass-fingering/main/DoubleBassSimandl.qml)
 
 One file. Put it in your MuseScore plugins folder, restart MuseScore, enable it under `Home > Plugins`. Full steps under [Installation](#-installation).
 
@@ -15,13 +15,23 @@ One file. Put it in your MuseScore plugins folder, restart MuseScore, enable it 
 
 ![preview](assets/preview.png)
 
+## Version 2.1
+
+- Defaults to a study profile with gentler position preferences and lower string-crossing costs.
+- Uses the tempo at the preceding note to scale movement urgency, and actual durations for tuplets. Tempo changes inside a sustained note are still approximated.
+- Study and pizzicato profiles allow long and consecutive open strings without lyrical penalties; arco retains those preferences.
+- Double stops require adjacent strings in study/arco. Unsupported chords are marked `?` instead of silently dropping notes.
+- Cleans up Spanish labels on reruns and displays string changes in fast passages.
+
+This version still optimizes a cost model over each selected voice; it does not recognize phrases or repeated motifs, and it does not use AI.
+
 ## ✨ What it does
 
 - Reads every note in the score (or selection), with its **duration** and the **rests around it**
 - Works out every fingering the left hand could physically use, across all four strings, in neck positions **and thumb position**
 - Picks the sequence with the lowest total cost by dynamic programming over the whole voice
 - Writes **string + finger** labels (`A2`, `D4`, `E0`, `GT`) and colours each note by position
-- Labels at reading density: every finger where the notes are long enough to carry a label, only the position changes in fast passages, and the position spelled out (`G1 (3ª)`) exactly where a shift would otherwise be invisible
+- Labels at reading density: every finger where the notes are long enough to carry a label, string and position changes in fast passages, and the position spelled out (`G1 (3ª)`) exactly where a shift would otherwise be invisible
 - Handles **double stops**, skips **tied notes**, and replaces its own previous labels when you run it again
 
 ---
@@ -78,7 +88,7 @@ Intermediate positions (2½, 3½, 5½, 6½) get a lighter shade of the position 
 
 ## 📥 Installation
 
-1. Download [`DoubleBassSimandl.qml`](https://github.com/TVTvirus/double-bass-fingering/releases/latest/download/DoubleBassSimandl.qml) (or the `.zip` from the [latest release](https://github.com/TVTvirus/double-bass-fingering/releases/latest), same file plus this README)
+1. Download [`DoubleBassSimandl.qml`](https://raw.githubusercontent.com/TVTvirus/double-bass-fingering/main/DoubleBassSimandl.qml) (or the `.zip` from the [latest release](https://github.com/TVTvirus/double-bass-fingering/releases/latest), same file plus this README)
 2. Copy it to your MuseScore plugins folder:
 
 | OS | Path |
@@ -110,6 +120,7 @@ Everything lives in the `settings` block at the top of the `.qml`, and every wei
 
 | Setting | Effect |
 |---|---|
+| `playingStyle` | `"study"` (default), `"arco"`, or `"pizzicato"`; edit in the QML settings block |
 | `neckEase` | comfort of each position, one number per anchor fret. Lower = the solver likes it more |
 | `useThumb` | set `false` to stay out of thumb position entirely |
 | `thumbMinPitch` | how high a note has to be before thumb position is considered (default G3 sounding) |
@@ -130,7 +141,8 @@ The algorithm is a single pure function with no MuseScore API in it, marked off 
 
 ```bash
 python3 tools/make-demo-score.py demo.musicxml en   # the score in the screenshot
-node tools/test-core.js     # 13 passages, with the expected reading of each
+node tools/test-core.js     # 13 illustrative passages (not assertions; descriptions reflect the original lyrical model)
+node tools/test-regressions.js # assertions for 2.1 chord, cleanup, and tempo behavior
 node tools/compare-old.js   # this version vs the previous one, side by side
 python3 tools/qml-check.py DoubleBassSimandl.qml   # catches QML errors that stop
                                                    # the plugin from loading at all
@@ -158,7 +170,7 @@ mscore -r 130 -o out.png out.musicxml
 ## ⚠️ Limitations
 
 - **Slurs are ignored.** The plugin API does not expose them reliably, so phrasing is inferred from note lengths and rests only.
-- Chords of three or more notes are fingered from the **top note**; two-note chords are fingered as real double stops.
+- Chords of three or more notes, and double stops outside the available hand frames, are marked `?`. Supported double stops use adjacent strings in study/arco; pizzicato permits nonadjacent strings.
 - No harmonics, and no alternative 1-2-3 hand shape in the upper neck.
 - The result is a strong first draft, not a substitute for a teacher's eye.
 
